@@ -60,8 +60,8 @@ export const MovieController = {
 
   async update(req: Request, res: Response) {
     try {
-      const id = Number(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id || Array.isArray(id)) {
         return res.status(400).json({ error: "Invalid id" });
       }
 

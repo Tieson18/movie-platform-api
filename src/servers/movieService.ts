@@ -45,7 +45,7 @@ export const MovieService = {
     return result.rows[0];
   },
 
-  async updateMovie(id: number, data: UpdateMovieDTO) {
+  async updateMovie(id: string, data: UpdateMovieDTO) {
     const existing = await this.getMovieById(id);
     if (!existing) return null;
 
