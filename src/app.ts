@@ -6,8 +6,24 @@ import { swaggerSpec } from "./config/swagger.js";
 
 const app = express();
 
+// middleware
 app.use(cors({ origin: "*" }));
 app.use(express.json());
+
+app.use(
+  (
+    err: Error,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    console.error(err);
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: err.message,
+    });
+  },
+);
 
 // REST routes
 app.use("/api", router);
