@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import router from "./routes/movieRoutes.js";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.js";
 
 const app = express();
 
@@ -8,7 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 // REST routes
-app.use("/", router);
+app.use("/api", router);
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get("/", (req, res) => {
   res
