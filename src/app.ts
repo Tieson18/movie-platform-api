@@ -6,7 +6,7 @@ import { swaggerSpec } from "./config/swagger.js";
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // REST routes

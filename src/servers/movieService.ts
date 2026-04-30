@@ -66,7 +66,7 @@ export const MovieService = {
     return result.rows[0];
   },
 
-  async deleteMovie(id: number) {
+  async deleteMovie(id: string) {
     const result = await pool.query("DELETE FROM movies WHERE id=$1", [id]);
 
     cache.del("movies"); // 🔥 invalidate cache

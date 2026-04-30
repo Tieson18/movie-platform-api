@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import app from "./app.js";
 
 import { ApolloServer } from "apollo-server-express";
-import { typeDefs } from "./graphql/schema.js";
+import { typeDefs } from "./models/schema.js";
 import { resolvers } from "./graphql/resolvers.js";
 
 dotenv.config();
@@ -18,6 +18,7 @@ async function startServer() {
   server.applyMiddleware({
     app: app as any,
     path: "/graphql",
+    bodyParserConfig: false, // Disable body parsing to let Apollo handle it
   });
 
   const PORT = process.env.PORT || 3000;
