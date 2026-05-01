@@ -4,7 +4,7 @@
   "description": "A RESTful and GraphQL API for managing a movie catalog, built with Node.js, TypeScript, and Express. Integrates with the [TMDB (The Movie Database)](https://www.themoviedb.org/) API to enrich movie data, with PostgreSQL for persistence and in-memory caching for performance.",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && cp openapi.yaml dist/",
+    "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "check": "tsc --noEmit",
