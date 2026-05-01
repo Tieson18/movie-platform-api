@@ -4,9 +4,10 @@ export const typeDefs = gql`
   type Movie {
     id: ID!
     title: String!
+    director: String!
+    release_year: Int
     genre: String!
     rating: Float!
-    release_year: Int
     externalData: JSON
   }
 
@@ -14,9 +15,10 @@ export const typeDefs = gql`
 
   input MovieInput {
     title: String!
+    director: String!
+    release_year: Int
     genre: String!
     rating: Float!
-    release_year: Int
   }
 
   type Query {
