@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "kiota":"kiota generate -l typescript -d openapi.yaml -c MovieClient -o ./client"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/Tieson18/movie-platform-api#readme",
   "dependencies": {
+    "@microsoft/kiota-bundle": "^1.0.0-preview.100",
     "apollo-server-express": "^3.13.0",
     "axios": "^1.15.2",
     "cors": "^2.8.6",
