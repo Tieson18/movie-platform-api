@@ -173,6 +173,8 @@ type Query {
 
 type Mutation {
   createMovie(title: String!, genre: String!, rating: Float!): Movie
+  updateMovie(id: ID!, title: String!, genre: String!, rating: Float!): Movie
+  deleteMovie(id: ID!): String
 }
 ```
 
@@ -222,8 +224,9 @@ src/
 ├── controllers/
 │   └── movieController.ts   # Route handler logic
 ├── graphql/
-│   ├── schema.ts        # GraphQL type definitions
 │   └── resolvers.ts     # GraphQL resolvers
+├── models/
+│   └── schema.ts        # GraphQL type definitions
 ├── routes/
 │   └── movieRoutes.ts   # REST route definitions with Swagger annotations
 ├── servers/
@@ -243,9 +246,3 @@ src/
 ## Caching
 
 Movie list queries (`GET /api/movies` and the `movies` GraphQL query) are cached for 5 minutes using `node-cache`. The cache is automatically invalidated on any write operation (create, update, or delete).
-
----
-
-## License
-
-ISC
