@@ -5,7 +5,7 @@ export const MovieController = {
   async getAll(req: Request, res: Response) {
     try {
       const movies = await MovieService.MovieService_list();
-      res.json({ value: movies });
+      res.json(movies);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch movies" });
     }
