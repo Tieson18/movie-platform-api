@@ -1,0 +1,192 @@
+openapi: 3.1.0
+info:
+  title: Movie Catalog API
+  version: 1.0.0
+
+servers:
+  - url:"http://localhost:3000"
+    description: Production server
+
+tags:
+  - name: Movies
+    description: Movie management endpoints
+
+paths:
+  /api/movies:
+    get:
+      operationId: MovieService_list
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCollectionWithNextLink"
+
+    post:
+      operationId: MovieService_create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
+
+  /api/movies/stats:
+    get:
+      operationId: MovieService_stats
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalMovies:
+                    type: integer
+                  averageRating:
+                    type: number
+
+  /api/movies/{id}/details:
+  get:
+    operationId: MovieService_getDetails
+    parameters:
+      - $ref: "#/components/parameters/MovieKey"
+    responses:
+      "200":
+        description: Success
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Movie"
+
+  /api/movies/{id}:
+    get:
+      operationId: MovieService_get
+      parameters:
+        - $ref: "#/components/parameters/MovieKey"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
+
+    patch:
+      operationId: MovieService_update
+      parameters:
+        - $ref: "#/components/parameters/MovieKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
+
+    delete:
+      operationId: MovieService_delete
+      parameters:
+        - $ref: "#/components/parameters/MovieKey"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+components:
+  parameters:
+    MovieKey:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    Movie:
+      type: object
+      required:
+        - id
+        - title
+        - director
+        - release_year
+        - genre
+        - rating
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        director:
+          type: string
+        release_year:
+          type: integer
+        genre:
+          type: string
+        rating:
+          type: number
+
+    MovieCollectionWithNextLink:
+      type: object
+      properties:
+        value:
+          type: array
+          items:
+            $ref: "#/components/schemas/Movie"
+        nextLink:
+          type: string
+
+    MovieCreate:
+      type: object
+      required:
+        - title
+        - director
+        - release_year
+        - genre
+        - rating
+      properties:
+        title:
+          type: string
+        director:
+          type: string
+        release_year:
+          type: integer
+        genre:
+          type: string
+        rating:
+          type: number
+
+    MovieUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        director:
+          type: string
+        release_year:
+          type: integer
+        genre:
+          type: string
+        rating:
+          type: number

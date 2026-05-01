@@ -4,7 +4,7 @@ import { TMDBService } from "./TMDBService.js";
 import type { CreateMovieDTO, UpdateMovieDTO } from "../types/index.js";
 
 export const MovieService = {
-  async getAllMovies() {
+  async MovieService_list() {
     const cached = cache.get("movies");
     if (cached) return cached;
 
@@ -14,13 +14,22 @@ export const MovieService = {
     return result.rows;
   },
 
-  async getMovieById(id: string) {
+  async MovieService_get(id: string) {
     const result = await pool.query("SELECT * FROM movies WHERE id = $1", [id]);
     return result.rows[0] || null;
   },
 
-  async getMovieWithDetails(id: string) {
-    const movie = await this.getMovieById(id);
+  async MovieService_stats() {
+    const result = await pool.query(`
+      SELECT genre, COUNT(*) AS count, AVG(rating) AS avg_rating
+      FROM movies
+      GROUP BY genre
+    `);
+    return result.rows;
+  },
+
+  async MovieService_getDetails(id: string) {
+    const movie = await this.MovieService_get(id);
     if (!movie) return null;
 
     // 🔥 Better approach: use search instead of ID
@@ -32,12 +41,12 @@ export const MovieService = {
     };
   },
 
-  async createMovie(data: CreateMovieDTO) {
-    const { title, genre, rating, release_year } = data;
+  async MovieService_create(data: CreateMovieDTO) {
+    const { title, director, release_year, genre, rating } = data;
 
     const result = await pool.query(
-      "INSERT INTO movies (title, genre, rating, release_year) VALUES ($1,$2,$3,$4) RETURNING *",
-      [title, genre, rating, release_year],
+      "INSERT INTO movies (id, title, director, release_year, genre, rating) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING *",
+      [title, director, release_year, genre, rating],
     );
 
     cache.del("movies"); // 🔥 invalidate cache
@@ -45,8 +54,8 @@ export const MovieService = {
     return result.rows[0];
   },
 
-  async updateMovie(id: string, data: UpdateMovieDTO) {
-    const existing = await this.getMovieById(id);
+  async MovieService_update(id: string, data: UpdateMovieDTO) {
+    const existing = await this.MovieService_get(id);
     if (!existing) return null;
 
     const updated = {
@@ -66,7 +75,7 @@ export const MovieService = {
     return result.rows[0];
   },
 
-  async deleteMovie(id: string) {
+  async MovieService_delete(id: string) {
     const result = await pool.query("DELETE FROM movies WHERE id=$1", [id]);
 
     cache.del("movies"); // 🔥 invalidate cache
