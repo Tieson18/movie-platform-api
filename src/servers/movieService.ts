@@ -12,7 +12,7 @@ export const MovieService = {
     const result = await pool.query("SELECT * FROM movies");
 
     cache.set("movies", result.rows);
-    return { value: result.rows };
+    return result.rows;
   },
 
   async MovieService_get(id: string) {
