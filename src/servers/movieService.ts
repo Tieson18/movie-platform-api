@@ -2,6 +2,7 @@ import { pool } from "../config/db.js";
 import { cache } from "../utils/cache.js";
 import { TMDBService } from "./TMDBService.js";
 import type { CreateMovieDTO, UpdateMovieDTO } from "../types/index.js";
+import { dir } from "console";
 
 export const MovieService = {
   async MovieService_list() {
@@ -21,11 +22,12 @@ export const MovieService = {
 
   async MovieService_stats() {
     const result = await pool.query(`
-      SELECT genre, COUNT(*) AS count, AVG(rating) AS avg_rating
+    SELECT 
+        COUNT(*)::int AS "totalMovies", 
+        COALESCE(AVG(rating), 0)::float AS "averageRating"
       FROM movies
-      GROUP BY genre
-    `);
-    return result.rows;
+  `);
+    return result.rows[0];
   },
 
   async MovieService_getDetails(id: string) {
@@ -55,24 +57,46 @@ export const MovieService = {
   },
 
   async MovieService_update(id: string, data: UpdateMovieDTO) {
+    if (!id) throw new Error("Invalid ID");
+
     const existing = await this.MovieService_get(id);
     if (!existing) return null;
 
     const updated = {
       title: data.title ?? existing.title,
+      director: data.director ?? existing.director,
+      release_year: data.release_year ?? existing.release_year,
       genre: data.genre ?? existing.genre,
       rating: data.rating ?? existing.rating,
-      release_year: data.release_year ?? existing.release_year,
     };
 
-    const result = await pool.query(
-      "UPDATE movies SET title=$1, genre=$2, rating=$3, release_year=$4 WHERE id=$5 RETURNING *",
-      [updated.title, updated.genre, updated.rating, updated.release_year, id],
-    );
+    try {
+      const result = await pool.query(
+        `UPDATE movies 
+       SET title=$1, director=$2, genre=$3, rating=$4, release_year=$5 
+       WHERE id=$6 
+       RETURNING *`,
+        [
+          updated.title,
+          updated.director,
+          updated.genre,
+          updated.rating,
+          updated.release_year,
+          id,
+        ],
+      );
 
-    cache.del("movies"); // 🔥 invalidate cache
+      if (!result.rows[0]) {
+        throw new Error("Update failed");
+      }
 
-    return result.rows[0];
+      cache.del("movies");
+
+      return result.rows[0];
+    } catch (err) {
+      console.error("Update error:", err);
+      throw err;
+    }
   },
 
   async MovieService_delete(id: string) {

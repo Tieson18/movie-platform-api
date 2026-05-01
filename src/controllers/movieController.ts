@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import { MovieService } from "../servers/movieService.js";
-import type { CreateMovieDTO } from "../types/index.js";
 
 export const MovieController = {
   async getAll(req: Request, res: Response) {
@@ -27,6 +26,15 @@ export const MovieController = {
       res.json(movie);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch movie" });
+    }
+  },
+
+  async stats(req: Request, res: Response) {
+    try {
+      const stats = await MovieService.MovieService_stats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch stats" });
     }
   },
 

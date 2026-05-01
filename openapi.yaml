@@ -2,10 +2,10 @@ openapi: 3.1.0
 info:
   title: Movie Catalog API
   version: 1.0.0
+  description: API for managing a movie catalog, including CRUD operations and statistics.
 
 servers:
   - url:"http://localhost:3000"
-    description: Production server
 
 tags:
   - name: Movies
@@ -56,17 +56,17 @@ paths:
                     type: number
 
   /api/movies/{id}/details:
-  get:
-    operationId: MovieService_getDetails
-    parameters:
-      - $ref: "#/components/parameters/MovieKey"
-    responses:
-      "200":
-        description: Success
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Movie"
+    get:
+      operationId: MovieService_getDetails
+      parameters:
+        - $ref: "#/components/parameters/MovieKey"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movie"
 
   /api/movies/{id}:
     get:
@@ -130,7 +130,7 @@ components:
         - id
         - title
         - director
-        - release_year
+        - releaseYear
         - genre
         - rating
       properties:
@@ -140,7 +140,7 @@ components:
           type: string
         director:
           type: string
-        release_year:
+        releaseYear:
           type: integer
         genre:
           type: string
@@ -162,7 +162,7 @@ components:
       required:
         - title
         - director
-        - release_year
+        - releaseYear
         - genre
         - rating
       properties:
@@ -170,7 +170,7 @@ components:
           type: string
         director:
           type: string
-        release_year:
+        releaseYear:
           type: integer
         genre:
           type: string
@@ -184,7 +184,7 @@ components:
           type: string
         director:
           type: string
-        release_year:
+        releaseYear:
           type: integer
         genre:
           type: string

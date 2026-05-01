@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import app from "./app.js";
 
 import { ApolloServer } from "apollo-server-express";
-import { typeDefs } from "./models/schema.js";
+import { typeDefs } from "./graphql/schema.js";
 import { resolvers } from "./graphql/resolvers.js";
 
 dotenv.config();
