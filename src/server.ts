@@ -25,7 +25,7 @@ async function startServer() {
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`REST: http://localhost:${PORT}/api`);
+    console.log(`REST: http://localhost:${PORT}/movies`);
     console.log(`GraphQL: http://localhost:${PORT}/graphql`);
   });
 }
