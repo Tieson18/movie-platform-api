@@ -12,7 +12,7 @@ tags:
     description: Movie management endpoints
 
 paths:
-  /api/movies:
+  /movies:
     get:
       operationId: MovieService_list
       responses:
@@ -39,7 +39,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Movie"
 
-  /api/movies/stats:
+  /movies/stats:
     get:
       operationId: MovieService_stats
       responses:
@@ -55,7 +55,7 @@ paths:
                   averageRating:
                     type: number
 
-  /api/movies/{id}/details:
+  /movies/{id}/details:
     get:
       operationId: MovieService_getDetails
       parameters:
@@ -68,7 +68,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Movie"
 
-  /api/movies/{id}:
+  /movies/{id}:
     get:
       operationId: MovieService_get
       parameters:

@@ -16,13 +16,13 @@ app.use(express.json());
 app.use(errorHandler);
 
 // REST routes
-app.use("/api", router);
+app.use("/", router);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(spec));
 app.get("/", (req, res) => {
   res
     .status(200)
     .send(
-      "Hello! Welcome to the Movie Platform API. Use /api for REST endpoints and /graphql for GraphQL.",
+      "Hello! Welcome to the Movie Platform API. Use /movies for REST endpoints and /graphql for GraphQL.",
     );
 });
 export default app;
