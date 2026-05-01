@@ -4,11 +4,11 @@ import router from "./routes/movieRoutes.js";
 import swaggerUi from "swagger-ui-express";
 import { errorHandler } from "./middlewares/error.js";
 import YAML from "yamljs";
-import { join } from "path";
+import path from "path/win32";
 
 const app = express();
-
-const spec = YAML.load(join(process.cwd(), "openapi.yaml"));
+const specPath = path.join(process.cwd(), "openapi.yaml");
+const spec = YAML.load(specPath);
 
 // middleware
 app.use(cors({ origin: "*" }));
