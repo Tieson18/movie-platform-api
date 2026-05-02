@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { MovieService } from "../servers/movieService.js";
+import { MovieService } from "../services/movieService.js";
 
 export const MovieController = {
   async getAll(req: Request, res: Response) {

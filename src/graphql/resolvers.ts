@@ -1,4 +1,4 @@
-import { MovieService } from "../servers/movieService.js";
+import { MovieService } from "../services/movieService.js";
 import type { Movie } from "../types/index.js";
 
 export const resolvers = {

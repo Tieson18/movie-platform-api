@@ -44,11 +44,11 @@ export const MovieService = {
   },
 
   async MovieService_create(data: CreateMovieDTO) {
-    const { title, director, release_year, genre, rating } = data;
+    const { title, director, releaseYear, genre, rating } = data;
 
     const result = await pool.query(
       "INSERT INTO movies (id, title, director, release_year, genre, rating) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING *",
-      [title, director, release_year, genre, rating],
+      [title, director, releaseYear, genre, rating],
     );
 
     cache.del("movies"); // 🔥 invalidate cache
@@ -65,7 +65,7 @@ export const MovieService = {
     const updated = {
       title: data.title ?? existing.title,
       director: data.director ?? existing.director,
-      release_year: data.release_year ?? existing.release_year,
+      release_year: data.releaseYear ?? existing.releaseYear,
       genre: data.genre ?? existing.genre,
       rating: data.rating ?? existing.rating,
     };

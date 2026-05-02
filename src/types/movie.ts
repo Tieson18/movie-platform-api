@@ -3,7 +3,7 @@ export interface Movie {
   id: string;
   title: string;
   director: string;
-  release_year: number;
+  releaseYear: number;
   genre: Genre;
   rating: number;
 }
@@ -11,7 +11,7 @@ export interface Movie {
 export interface CreateMovieDTO {
   title: string;
   director: string;
-  release_year: number;
+  releaseYear: number;
   genre: Genre;
   rating: number;
 }
@@ -19,7 +19,7 @@ export interface CreateMovieDTO {
 export interface UpdateMovieDTO {
   title?: string;
   director?: string;
-  release_year?: number;
+  releaseYear?: number;
   genre?: Genre;
   rating?: number;
 }
