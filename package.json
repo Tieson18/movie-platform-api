@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "dev": "tsx src/index.ts",
     "check": "tsc --noEmit",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config jest.config.ts --runInBand",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config jest.config.js --runInBand",
     "kiota": "kiota generate -l typescript -d openapi.yaml -c MovieClient -o ./client",
     "seed:admin": "tsx src/scripts/seedAdmin.ts"
   },
