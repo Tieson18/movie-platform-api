@@ -1,106 +1,77 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { MovieService } from "../services/movieService.js";
+import { AppError } from "../utils/errors.js";
 
 export const MovieController = {
-  async getAll(req: Request, res: Response) {
+  async getAll(_req: Request, res: Response, next: NextFunction) {
     try {
-      const movies = await MovieService.MovieService_list();
-      res.json({ value: movies });
+      const movies = await MovieService.list();
+      res.status(200).json({ value: movies });
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch movies" });
+      next(error);
     }
   },
 
-  async getOne(req: Request, res: Response) {
+  async getOne(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id;
-      if (!id || Array.isArray(id)) {
-        return res.status(400).json({ error: "Invalid id" });
-      }
-
-      const movie = await MovieService.MovieService_get(id);
-      if (!movie) {
-        return res.status(404).json({ error: "Movie not found" });
-      }
-
-      res.json(movie);
+      const id = req.params.id as string;
+      const movie = await MovieService.requireById(id);
+      res.status(200).json(movie);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch movie" });
+      next(error);
     }
   },
 
-  async stats(req: Request, res: Response) {
+  async getStats(_req: Request, res: Response, next: NextFunction) {
     try {
-      const stats = await MovieService.MovieService_stats();
-      res.json(stats);
+      const stats = await MovieService.getStats();
+      res.status(200).json(stats);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch stats" });
+      next(error);
     }
   },
 
-  async getWithDetails(req: Request, res: Response) {
+  async getDetails(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id;
-      if (!id || Array.isArray(id)) {
-        return res.status(400).json({ error: "Invalid id" });
-      }
-
-      const movie = await MovieService.MovieService_getDetails(id);
+      const id = req.params.id as string;
+      const movie = await MovieService.getDetails(id);
 
       if (!movie) {
-        return res.status(404).json({ error: "Movie not found" });
+        throw new AppError(404, "MOVIE_NOT_FOUND", "Movie not found");
       }
 
-      res.json(movie);
+      res.status(200).json(movie);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch movie details" });
+      next(error);
     }
   },
 
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const movie = await MovieService.MovieService_create(req.body);
+      const movie = await MovieService.create(req.body);
       res.status(201).json(movie);
     } catch (error) {
-      res.status(500).json({ error: "Failed to create movie" });
+      next(error);
     }
   },
 
-  async update(req: Request, res: Response) {
+  async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id;
-      if (!id || Array.isArray(id)) {
-        return res.status(400).json({ error: "Invalid id" });
-      }
-
-      const movie = await MovieService.MovieService_update(id, req.body);
-
-      if (!movie) {
-        return res.status(404).json({ error: "Movie not found" });
-      }
-
-      res.json(movie);
+      const id = req.params.id as string;
+      const movie = await MovieService.update(id, req.body);
+      res.status(200).json(movie);
     } catch (error) {
-      res.status(500).json({ error: "Failed to update movie" });
+      next(error);
     }
   },
 
-  async delete(req: Request, res: Response) {
+  async remove(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id;
-      if (!id || Array.isArray(id)) {
-        return res.status(400).json({ error: "Invalid id" });
-      }
-
-      const deleted = await MovieService.MovieService_delete(id);
-
-      if (!deleted) {
-        return res.status(404).json({ error: "Movie not found" });
-      }
-
-      res.json({ message: "Deleted successfully" });
+      const id = req.params.id as string;
+      await MovieService.delete(id);
+      res.status(200).json({ message: "Movie deleted successfully" });
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete movie" });
+      next(error);
     }
   },
 };

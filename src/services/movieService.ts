@@ -1,109 +1,160 @@
 import { pool } from "../config/db.js";
-import { cache } from "../utils/cache.js";
+import type {
+  CreateMovieDTO,
+  Movie,
+  MovieRow,
+  MovieStats,
+  MovieWithDetails,
+  UpdateMovieDTO,
+} from "../types/index.js";
 import { TMDBService } from "./TMDBService.js";
-import type { CreateMovieDTO, UpdateMovieDTO } from "../types/index.js";
-import { dir } from "console";
+import { CACHE_KEYS, cache, invalidateMovieCache } from "../utils/cache.js";
+import { AppError } from "../utils/errors.js";
+import { mapMovieRow } from "../utils/mappers.js";
+
+const toMovie = (row: MovieRow): Movie => mapMovieRow(row);
+const requireRow = <T>(row: T | undefined, message: string): T => {
+  if (!row) {
+    throw new AppError(500, "DATABASE_ERROR", message);
+  }
+
+  return row;
+};
 
 export const MovieService = {
-  async MovieService_list() {
-    const cached = cache.get("movies");
-    if (cached) return cached;
+  async list(): Promise<MovieWithDetails[]> {
+    const cached = cache.get<MovieWithDetails[]>(CACHE_KEYS.movies);
+    if (cached) {
+      return cached;
+    }
 
-    const result = await pool.query("SELECT * FROM movies");
+    const result = await pool.query<MovieRow>(
+      "SELECT id, title, director, release_year, genre, rating FROM movies ORDER BY title ASC",
+    );
+    const movies = result.rows.map(toMovie);
 
-    cache.set("movies", result.rows);
-    return result.rows;
+    const TMDBMovies = await Promise.all(
+      movies.map(async (movie) => {
+        const external = await TMDBService.searchMovies(movie.title);
+        return {
+          ...movie,
+          externalData: external[0] ?? null,
+        };
+      }),
+    );
+    cache.set(CACHE_KEYS.movies, TMDBMovies);
+    return TMDBMovies;
   },
 
-  async MovieService_get(id: string) {
-    const result = await pool.query("SELECT * FROM movies WHERE id = $1", [id]);
-    return result.rows[0] || null;
+  async getById(id: string): Promise<Movie | null> {
+    const result = await pool.query<MovieRow>(
+      "SELECT id, title, director, release_year, genre, rating FROM movies WHERE id = $1",
+      [id],
+    );
+
+    return result.rows[0] ? toMovie(result.rows[0]) : null;
   },
 
-  async MovieService_stats() {
-    const result = await pool.query(`
-    SELECT 
-        COUNT(*)::int AS "totalMovies", 
+  async requireById(id: string): Promise<Movie> {
+    const movie = await this.getById(id);
+
+    if (!movie) {
+      throw new AppError(404, "MOVIE_NOT_FOUND", "Movie not found");
+    }
+
+    return movie;
+  },
+
+  async getStats(): Promise<MovieStats> {
+    const cached = cache.get<MovieStats>(CACHE_KEYS.movieStats);
+    if (cached) {
+      return cached;
+    }
+
+    const result = await pool.query<{
+      totalMovies: number;
+      averageRating: number;
+    }>(`
+      SELECT
+        COUNT(*)::int AS "totalMovies",
         COALESCE(AVG(rating), 0)::float AS "averageRating"
       FROM movies
-  `);
-    return result.rows[0];
+    `);
+
+    const stats = {
+      totalMovies: Number(result.rows[0]?.totalMovies ?? 0),
+      averageRating: Number(result.rows[0]?.averageRating ?? 0),
+    };
+
+    cache.set(CACHE_KEYS.movieStats, stats);
+    return stats;
   },
 
-  async MovieService_getDetails(id: string) {
-    const movie = await this.MovieService_get(id);
-    if (!movie) return null;
+  async getDetails(id: string): Promise<MovieWithDetails | null> {
+    const movie = await this.getById(id);
+    if (!movie) {
+      return null;
+    }
 
-    // 🔥 Better approach: use search instead of ID
     const external = await TMDBService.searchMovies(movie.title);
 
     return {
       ...movie,
-      externalData: external?.[0] || null,
+      externalData: external[0] ?? null,
     };
   },
 
-  async MovieService_create(data: CreateMovieDTO) {
-    const { title, director, releaseYear, genre, rating } = data;
-
-    const result = await pool.query(
-      "INSERT INTO movies (id, title, director, release_year, genre, rating) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING *",
-      [title, director, releaseYear, genre, rating],
+  async create(data: CreateMovieDTO): Promise<Movie> {
+    const result = await pool.query<MovieRow>(
+      `
+        INSERT INTO movies (id, title, director, release_year, genre, rating)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+        RETURNING id, title, director, release_year, genre, rating
+      `,
+      [
+        data.title,
+        data.director,
+        data.releaseYear ?? null,
+        data.genre,
+        data.rating,
+      ],
     );
 
-    cache.del("movies"); // 🔥 invalidate cache
-
-    return result.rows[0];
+    invalidateMovieCache();
+    return toMovie(requireRow(result.rows[0], "Failed to create movie"));
   },
 
-  async MovieService_update(id: string, data: UpdateMovieDTO) {
-    if (!id) throw new Error("Invalid ID");
+  async update(id: string, data: UpdateMovieDTO): Promise<Movie> {
+    const existing = await this.requireById(id);
 
-    const existing = await this.MovieService_get(id);
-    if (!existing) return null;
+    const nextTitle = data.title ?? existing.title;
+    const nextDirector = data.director ?? existing.director;
+    const nextGenre = data.genre ?? existing.genre;
+    const nextRating = data.rating ?? existing.rating;
+    const nextReleaseYear =
+      data.releaseYear !== undefined ? data.releaseYear : existing.releaseYear;
 
-    const updated = {
-      title: data.title ?? existing.title,
-      director: data.director ?? existing.director,
-      release_year: data.releaseYear ?? existing.releaseYear,
-      genre: data.genre ?? existing.genre,
-      rating: data.rating ?? existing.rating,
-    };
+    const result = await pool.query<MovieRow>(
+      `
+        UPDATE movies
+        SET title = $1, director = $2, release_year = $3, genre = $4, rating = $5
+        WHERE id = $6
+        RETURNING id, title, director, release_year, genre, rating
+      `,
+      [nextTitle, nextDirector, nextReleaseYear, nextGenre, nextRating, id],
+    );
 
-    try {
-      const result = await pool.query(
-        `UPDATE movies 
-       SET title=$1, director=$2, genre=$3, rating=$4, release_year=$5 
-       WHERE id=$6 
-       RETURNING *`,
-        [
-          updated.title,
-          updated.director,
-          updated.genre,
-          updated.rating,
-          updated.release_year,
-          id,
-        ],
-      );
+    invalidateMovieCache();
+    return toMovie(requireRow(result.rows[0], "Failed to update movie"));
+  },
 
-      if (!result.rows[0]) {
-        throw new Error("Update failed");
-      }
+  async delete(id: string): Promise<void> {
+    const result = await pool.query("DELETE FROM movies WHERE id = $1", [id]);
 
-      cache.del("movies");
-
-      return result.rows[0];
-    } catch (err) {
-      console.error("Update error:", err);
-      throw err;
+    if (!result.rowCount) {
+      throw new AppError(404, "MOVIE_NOT_FOUND", "Movie not found");
     }
-  },
 
-  async MovieService_delete(id: string) {
-    const result = await pool.query("DELETE FROM movies WHERE id=$1", [id]);
-
-    cache.del("movies"); // 🔥 invalidate cache
-
-    return (result.rowCount ?? 0) > 0;
+    invalidateMovieCache();
   },
 };

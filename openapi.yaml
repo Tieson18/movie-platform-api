@@ -1,30 +1,80 @@
 openapi: 3.1.0
 info:
-  title: Movie Catalog API
-  version: 1.0.0
-  description: API for managing a movie catalog, including CRUD operations and statistics.
+  title: Movie Platform API
+  version: 4.0.0
+  description: REST API for movies, users, reviews, watchlists, and JWT authentication.
 
 servers:
-  - url:"http://localhost:3000"
+  - url: http://localhost:3000
 
 tags:
+  - name: Auth
   - name: Movies
-    description: Movie management endpoints
+  - name: Users
+  - name: Reviews
+  - name: Watchlist
 
 paths:
-  /movies:
-    get:
-      operationId: MovieService_list
+  /auth/register:
+    post:
+      tags: [Auth]
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserRequest"
       responses:
-        "200":
-          description: Success
+        "201":
+          description: User registered successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MovieCollectionWithNextLink"
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
 
+  /auth/login:
     post:
-      operationId: MovieService_create
+      tags: [Auth]
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginUserRequest"
+      responses:
+        "200":
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /movies:
+    get:
+      tags: [Movies]
+      operationId: listMovies
+      responses:
+        "200":
+          description: Movies fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCollectionResponse"
+    post:
+      tags: [Movies]
+      operationId: createMovie
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -33,58 +83,54 @@ paths:
               $ref: "#/components/schemas/MovieCreate"
       responses:
         "201":
-          description: Created
+          description: Movie created successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Movie"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
 
   /movies/stats:
     get:
-      operationId: MovieService_stats
+      tags: [Movies]
+      operationId: getMovieStats
       responses:
         "200":
-          description: Stats
+          description: Movie stats fetched successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  totalMovies:
-                    type: integer
-                  averageRating:
-                    type: number
-
-  /movies/{id}/details:
-    get:
-      operationId: MovieService_getDetails
-      parameters:
-        - $ref: "#/components/parameters/MovieKey"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Movie"
+                $ref: "#/components/schemas/MovieStats"
 
   /movies/{id}:
     get:
-      operationId: MovieService_get
+      tags: [Movies]
+      operationId: getMovie
       parameters:
-        - $ref: "#/components/parameters/MovieKey"
+        - $ref: "#/components/parameters/IdPath"
       responses:
         "200":
-          description: Success
+          description: Movie fetched successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Movie"
-
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
     patch:
-      operationId: MovieService_update
+      tags: [Movies]
+      operationId: updateMovie
+      security:
+        - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/MovieKey"
+        - $ref: "#/components/parameters/IdPath"
       requestBody:
         required: true
         content:
@@ -93,100 +139,523 @@ paths:
               $ref: "#/components/schemas/MovieUpdate"
       responses:
         "200":
-          description: Updated
+          description: Movie updated successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Movie"
-
-    delete:
-      operationId: MovieService_delete
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      tags: [Movies]
+      operationId: replaceMovie
+      security:
+        - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/MovieKey"
+        - $ref: "#/components/parameters/IdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieCreate"
       responses:
         "200":
-          description: Deleted
+          description: Movie updated successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: "#/components/schemas/Movie"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      tags: [Movies]
+      operationId: deleteMovie
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Movie deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /movies/{id}/details:
+    get:
+      tags: [Movies]
+      operationId: getMovieDetails
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Movie details fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieWithDetails"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /movies/{id}/reviews:
+    get:
+      tags: [Reviews]
+      operationId: getMovieReviews
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Reviews fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewCollectionResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /users:
+    get:
+      tags: [Users]
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Users fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCollectionResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      operationId: getUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: User fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /users/{id}/watchlist:
+    get:
+      tags: [Watchlist]
+      operationId: getUserWatchlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Watchlist fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistCollectionResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /reviews:
+    post:
+      tags: [Reviews]
+      operationId: createReview
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewCreate"
+      responses:
+        "201":
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /watchlist:
+    post:
+      tags: [Watchlist]
+      operationId: addToWatchlist
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchlistCreate"
+      responses:
+        "201":
+          description: Watchlist item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistItem"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+        "409":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /watchlist/{id}:
+    delete:
+      tags: [Watchlist]
+      operationId: removeWatchlistItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdPath"
+      responses:
+        "200":
+          description: Watchlist item removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
-    MovieKey:
+    IdPath:
       name: id
       in: path
       required: true
       schema:
         type: string
+        format: uuid
+
+  responses:
+    ErrorResponse:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
     Movie:
       type: object
-      required:
-        - id
-        - title
-        - director
-        - releaseYear
-        - genre
-        - rating
+      required: [id, title, director, genre, rating]
       properties:
         id:
           type: string
+          format: uuid
         title:
           type: string
         director:
           type: string
         releaseYear:
           type: integer
+          nullable: true
         genre:
           type: string
         rating:
           type: number
 
-    MovieCollectionWithNextLink:
+    MovieWithDetails:
+      allOf:
+        - $ref: "#/components/schemas/Movie"
+        - type: object
+          properties:
+            externalData:
+              type: object
+              nullable: true
+              additionalProperties: true
+
+    MovieCreate:
       type: object
+      required: [title, director, genre, rating]
+      properties:
+        title:
+          type: string
+        director:
+          type: string
+        releaseYear:
+          type: integer
+          nullable: true
+        genre:
+          type: string
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+
+    MovieUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+        director:
+          type: string
+        releaseYear:
+          type: integer
+          nullable: true
+        genre:
+          type: string
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+
+    MovieStats:
+      type: object
+      required: [totalMovies, averageRating]
+      properties:
+        totalMovies:
+          type: integer
+        averageRating:
+          type: number
+
+    User:
+      type: object
+      required: [id, name, email, role, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [user, admin]
+        createdAt:
+          type: string
+          format: date-time
+
+    RegisterUserRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [user, admin]
+
+    LoginUserRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    Review:
+      type: object
+      required: [id, userId, movieId, rating, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        movieId:
+          type: string
+          format: uuid
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewCreate:
+      type: object
+      required: [userId, movieId, rating]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        movieId:
+          type: string
+          format: uuid
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+        comment:
+          type: string
+          nullable: true
+
+    WatchlistItem:
+      type: object
+      required: [id, userId, movieId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        movieId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    WatchlistCreate:
+      type: object
+      required: [userId, movieId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        movieId:
+          type: string
+          format: uuid
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    MovieCollectionResponse:
+      type: object
+      required: [value]
       properties:
         value:
           type: array
           items:
-            $ref: "#/components/schemas/Movie"
-        nextLink:
-          type: string
+            $ref: "#/components/schemas/MovieWithDetails"
 
-    MovieCreate:
+    UserCollectionResponse:
       type: object
-      required:
-        - title
-        - director
-        - releaseYear
-        - genre
-        - rating
+      required: [value]
       properties:
-        title:
-          type: string
-        director:
-          type: string
-        releaseYear:
-          type: integer
-        genre:
-          type: string
-        rating:
-          type: number
+        value:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
 
-    MovieUpdate:
+    ReviewCollectionResponse:
       type: object
+      required: [value]
       properties:
-        title:
-          type: string
-        director:
-          type: string
-        releaseYear:
-          type: integer
-        genre:
-          type: string
-        rating:
-          type: number
+        value:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+
+    WatchlistCollectionResponse:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: array
+          items:
+            $ref: "#/components/schemas/WatchlistItem"

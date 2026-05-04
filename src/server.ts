@@ -1,23 +1,32 @@
 import dotenv from "dotenv";
-import app from "./app.js";
 import { ApolloServer } from "apollo-server-express";
-import { typeDefs } from "./graphql/schema.js";
+import app from "./app.js";
+import { initializeDatabase } from "./config/db.js";
 import { resolvers } from "./graphql/resolvers.js";
+import { typeDefs } from "./graphql/schema.js";
+import type { GraphQLContext } from "./types/index.js";
 
 dotenv.config();
 
 async function startServer() {
+  await initializeDatabase();
+
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    context: async ({ req }): Promise<GraphQLContext> => ({
+      user: req.user ?? null,
+    }),
   });
 
   await server.start();
 
+  const middlewareApp = app as unknown as Parameters<typeof server.applyMiddleware>[0]["app"];
+
   server.applyMiddleware({
-    app: app as any,
+    app: middlewareApp,
     path: "/graphql",
-    bodyParserConfig: false, // Disable body parsing to let Apollo handle it
+    bodyParserConfig: false,
   });
 
   const PORT = process.env.PORT || 3000;
