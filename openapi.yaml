@@ -516,10 +516,7 @@ components:
           format: email
         password:
           type: string
-          minLength: 8
-        role:
-          type: string
-          enum: [user, admin]
+          minLength: 6
 
     LoginUserRequest:
       type: object
@@ -623,6 +620,18 @@ components:
       properties:
         error:
           type: string
+        details:
+          type: array
+          items:
+            type: object
+            required: [path, message, code]
+            properties:
+              path:
+                type: string
+              message:
+                type: string
+              code:
+                type: string
 
     MovieCollectionResponse:
       type: object

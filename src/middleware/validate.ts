@@ -3,6 +3,19 @@ import { ZodError } from "zod";
 import type { ZodType } from "zod";
 import { AppError } from "../utils/errors.js";
 
+interface ValidationIssue {
+  path: string;
+  message: string;
+  code: string;
+}
+
+const formatZodIssues = (error: ZodError): ValidationIssue[] =>
+  error.issues.map((issue) => ({
+    path: issue.path.map(String).join("."),
+    message: issue.message,
+    code: issue.code,
+  }));
+
 export const validate = (schema: ZodType) => {
   return (req: Request, _res: Response, next: NextFunction) => {
     try {
@@ -35,8 +48,8 @@ export const validate = (schema: ZodType) => {
           new AppError(
             400,
             "VALIDATION_ERROR",
-            "Invalid request body",
-            error.flatten(),
+            "Validation failed",
+            formatZodIssues(error),
           ),
         );
         return;

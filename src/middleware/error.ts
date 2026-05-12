@@ -8,7 +8,10 @@ export const errorHandler = (
   next: NextFunction,
 ) => {
   if (isAppError(err)) {
-    return res.status(err.statusCode).json({ error: err.message });
+    return res.status(err.statusCode).json({
+      error: err.message,
+      ...(err.details === undefined ? {} : { details: err.details }),
+    });
   }
 
   const message = err instanceof Error ? err.message : "Internal server error";

@@ -58,7 +58,7 @@ export const UserService = {
     }
 
     const passwordHash = await bcrypt.hash(data.password, 10);
-    const role = data.role ?? "user";
+    const role: UserRole = "user";
 
     const created = await pool.query<UserRow>(
       `
